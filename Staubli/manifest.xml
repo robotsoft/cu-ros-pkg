@@ -1,13 +1,13 @@
 <package>
   <description brief="staubli">
 
-     staubli
+     This is staubli TX60L package for ROS.
 
   </description>
   <author>Soonhac Hong</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/staubli</url>
+  <url>http://code.google.com/p/cu-ros-pkg/</url>
   <depend package="std_msgs"/>
   <depend package="roscpp"/>
   <export>
