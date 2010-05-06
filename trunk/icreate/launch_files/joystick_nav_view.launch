@@ -1,0 +1,16 @@
+<launch>
+  <node pkg="map_server" type="map_server" args="$(find stanford_maps)/gates-a-wing-0.05-edited.pgm 0.05" respawn="false" />
+  <node pkg="joy" type="txjoy"/>
+  <node pkg="teleop_generic" type="joy_posedot_hack" args="$(find irobot_create)/config/stairvac-thrustmaster" >
+    <remap from="posedot" to="cmd_vel"/>
+  </node>
+  <node pkg="nav_view" type="nav_view" respawn="false" launch-prefix="glc-capture">
+    <!--<remap from="goal" to="/move_base/activate" />-->
+    <remap from="raw_obstacles" to="/move_base/local_costmap/raw_obstacles" />
+    <remap from="inflated_obstacles" to="/move_base/local_costmap/inflated_obstacles" />
+    <remap from="gui_path" to="/move_base/NavfnROS/plan" />
+    <remap from="local_path" to="/move_base/TrajectoryPlannerROS/local_plan" />
+    <remap from="robot_footprint" to="/move_base/TrajectoryPlannerROS/robot_footprint"/>
+  </node>
+  <!--<node pkg="image_view" type="image_view"/>-->
+</launch>
