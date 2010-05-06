@@ -1,0 +1,36 @@
+<launch>
+  <master auto="start"/>
+  <param name="/use_sim_time" value="false"/>
+  <!--<node pkg="irobot_create" type="timer" respawn="false"/>-->
+  <node pkg="map_server" type="map_server" args="$(find irobot_create)/map/gates-a-wing-0.05.pgm 0.05" respawn="false" />
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="footprint_padding" value="0.01" />
+    <param name="controller_frequency" value="6.0" />
+    <rosparam file="$(find irobot_create)/config/navfn_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find irobot_create)/config/navfn_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find irobot_create)/config/base_local_planner_params.yaml" command="load" />
+>
+<!-- <param name="global_frame" value="/map" />
+    <param name="robot_base_frame" value="/odom" />
+    <param name="inscribed_radius" value="0.325" />
+    <param name="circumscribed_radius" value="0.46" />
+    <param name="inflation_radius" value="0.55" />
+    <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find move_base_stage)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find move_base_stage)/move_base/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find move_base_stage)/move_base/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find move_base_stage)/move_base/navfn_params.yaml" command="load" />
+    <rosparam file="$(find move_base_stage)/move_base/base_local_planner_params.yaml" command="load" /> -->
+  </node>
+  <node pkg="fake_localization" type="fake_localization" respawn="false" />
+  <node pkg="nav_view" type="nav_view" respawn="false">
+    <remap from="goal" to="/move_base/activate" />
+    <remap from="raw_obstacles" to="/move_base/local_costmap/raw_obstacles" />
+    <remap from="inflated_obstacles" to="/move_base/local_costmap/inflated_obstacles" />
+    <remap from="gui_path" to="/move_base/NavfnROS/plan" />
+    <remap from="local_path" to="/move_base/TrajectoryPlannerROS/local_plan" />
+    <remap from="robot_footprint" to="/move_base/TrajectoryPlannerROS/robot_footprint"/>
+  </node>
+  <node pkg="tf" type="transform_sender" args="0 0 0 0 0 0 base_laser base_link 40"/>
+  <node pkg="tf" type="transform_sender" args="0 0 0 0 0 0 base_link base_footprint 40"/>
+</launch>

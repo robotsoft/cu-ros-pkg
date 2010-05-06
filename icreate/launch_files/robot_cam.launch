@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="irobot_create" type="irobot_create_node" />
+  <node pkg="uvc_cam" type="sender" args="/dev/video1" />
+</launch>

@@ -1,0 +1,6 @@
+<launch>
+	<node pkg="joy" type="txjoy"/>
+	<node pkg="teleop_generic" type="joy_posedot_hack" args="$(find irobot_create)/config/stairvac-thrustmaster" >
+    <remap from="posedot" to="cmd_vel"/>
+  </node>
+</launch>
