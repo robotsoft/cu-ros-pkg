@@ -2,7 +2,7 @@
  * bumblebee2.cpp
  *
  *    Created on: May 7, 2010
- *        Author: Soonhac Hong
+ *        Author: Soonhac Hong (sh2723@columbia.edu)
  *         Note : Most of code of this file is borrowed from camera1394.cpp of camera1394 package.
  * Modification : In video mode, 640x480_stereo_mono is added to assign the video mode to DC1394_VIDEO_MODE_640x480_MONO16.
  *                As mono 16bit data(MSB-right camera, LSB-left camera) are captured from bumblebee2,
@@ -10,6 +10,9 @@
  *        Usage : $roslaunch bumblebee2 Bumblebee2.launch
  *                $rosrun image_view image_view image:=/bumblebee2/left/image_raw
  *                $rosrun image_view image_view image:=/bumblebee2/right/image_raw
+ *                To view stereo image and disparity image,
+ *                $ROS_NAMESPACE=bumblebee2 rosrun stereo_image_proc stereo_image_proc
+ *                $rosrun image_view stereo_view stereo:=/bumblebee2 image:=image_mono
  */
 
 
@@ -142,7 +145,8 @@ private:
   sensor_msgs::Image image_;
   sensor_msgs::Image left_image_;
   sensor_msgs::Image right_image_;
-  sensor_msgs::CameraInfo cam_info_;
+  sensor_msgs::CameraInfo left_cam_info_;
+  sensor_msgs::CameraInfo right_cam_info_;
 
   CameraInfoManager *cinfo_;
 
@@ -376,17 +380,20 @@ public:
   void read()
   {
         // get current CameraInfo data
-        cam_info_ = cinfo_->getCameraInfo();
-        left_image_.header.frame_id = right_image_.header.frame_id = image_.header.frame_id = cam_info_.header.frame_id = frame_id_;
+        left_cam_info_ = right_cam_info_= cinfo_->getCameraInfo();
+        left_image_.header.frame_id = right_image_.header.frame_id = image_.header.frame_id = left_cam_info_.header.frame_id = right_cam_info_.header.frame_id = frame_id_;
+
+        //update bumblebee2 calibration data
+        updateBumblebee2CalibrationData();
 
         try
           {
             // Read data from the Camera
             dev_->readData(image_);
 
-            cam_info_.header.stamp = left_image_.header.stamp = right_image_.header.stamp=image_.header.stamp;
-            cam_info_.height = left_image_.height = right_image_.height=image_.height;
-            cam_info_.width = left_image_.width = right_image_.width=image_.width;
+            left_cam_info_.header.stamp = right_cam_info_.header.stamp = left_image_.header.stamp = right_image_.header.stamp=image_.header.stamp;
+            left_cam_info_.height = right_cam_info_.height = left_image_.height = right_image_.height=image_.height;
+            left_cam_info_.width = right_cam_info_.width = left_image_.width = right_image_.width=image_.width;
             if (encoding_ != "")
               image_.encoding = encoding_; // override driver setting
             left_image_.encoding = right_image_.encoding = image_.encoding;
@@ -400,14 +407,39 @@ public:
 			memcpy(&left_image_.data[0], &image_.data[image_size], image_size);		// the image of left camera is the second half of the deinterlaced image.
 
             // Publish it via image_transport
-			left_image_pub_.publish(left_image_, cam_info_);
-			right_image_pub_.publish(right_image_, cam_info_);
+			left_image_pub_.publish(left_image_, left_cam_info_);
+			right_image_pub_.publish(right_image_, right_cam_info_);
           }
         catch (bumblebee2::Exception& e) {
           ROS_WARN_STREAM("[" << camera_name_ << "] Exception reading data: "
                           << e.what());
           //TODO: shut down and exit?
         }
+  }
+
+  /** Update the bumblebee2 calibration data */
+  /** Author : Soonhac Hong (sh2723@columbia.edu) */
+  /** Date : 5/24/2010 */
+  /** Note : Calibration data is needed to show disparity image using image_view with stereo_view.*/
+  void updateBumblebee2CalibrationData()
+  {
+	  double left_D_data[] = {-0.29496962080028677, 0.12120859315219049, -0.0019941265153862824, 0.0012058185627261283, 0.0};
+      double left_K_data[] = {543.60636929659358, 0.0, 321.7411723319629, 0.0, 543.25622524820562, 268.04452669345528, 0.0, 0.0, 1.0};
+	  double left_R_data[] = {0.99980275533925467, -0.018533834763323875, -0.0071377436911170388, 0.018542709766871161, 0.99982737377597841, 0.0011792212393866724, 0.0071146560377753926, -0.0013113417539480422, 0.9999738306837177};
+	  double left_P_data[] = {514.20203529502226, 0.0, 334.37528610229492, 0.0, 0.0, 514.20203529502226, 268.46113204956055, 0.0, 0.0, 0.0, 1.0, 0.0};
+	  double right_D_data[] =  {-0.2893208200535437, 0.11215776927066376, -0.0003854904042866552, 0.00081197271575971614, 0.0};
+	  double right_K_data[] =  {541.66040340873735, 0.0, 331.73470962829737, 0.0, 541.60313005445187, 265.72960150703699, 0.0, 0.0, 1.0};
+	  double right_R_data[] =  {0.99986888001551244, -0.012830354497672055, -0.0098795131453283894, 0.012818040762902759, 0.99991698911455085, -0.001308705884349387, 0.0098954841986237611, 0.001181898284639702, 0.99995034002140304};
+	  double right_P_data[] =  {514.20203529502226, 0.0, 334.37528610229492, -232.44101555000066, 0.0, 514.20203529502226, 268.46113204956055, 0.0, 0.0, 0.0, 1.0, 0.0};
+
+      memcpy(&left_cam_info_.D[0], &left_D_data[0], sizeof(left_D_data));
+	  memcpy(&left_cam_info_.K[0], &left_K_data[0], sizeof(left_K_data));
+	  memcpy(&left_cam_info_.R[0], &left_R_data[0], sizeof(left_R_data));
+	  memcpy(&left_cam_info_.P[0], &left_P_data[0], sizeof(left_P_data));
+	  memcpy(&right_cam_info_.D[0], &right_D_data[0], sizeof(right_D_data));
+      memcpy(&right_cam_info_.K[0], &right_K_data[0], sizeof(right_K_data));
+      memcpy(&right_cam_info_.R[0], &right_R_data[0], sizeof(right_R_data));
+      memcpy(&right_cam_info_.P[0], &right_P_data[0], sizeof(right_P_data));
   }
 }; // end Bumblebee2Node class definition
 
