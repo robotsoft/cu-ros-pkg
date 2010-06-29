@@ -2,7 +2,7 @@
   <description brief="wireless_camera">
      This package publishes sensor_msgs/image from wireless camera which provides a MJPEG stream file.
   </description>
-  <author>Soonhac</author>
+  <author>Soonhac Hong</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/wireless_camera</url>
