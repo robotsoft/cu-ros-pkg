@@ -5,7 +5,7 @@
 # Brief : This package publishes sensor_msgs/image from wireless camera which provides a MJPEG stream file.
 # Usage : $roscore
 #         $make
-#         $rosrun wireless_camera wireless_camera.py
+#         $rosrun wireless_camera wireless_camera.py <fps>    #<fps> to show the frames per second
 #         $rosrun image_view image_view image:=/wireless_camera/image
 ###############################################################################
 
@@ -16,12 +16,14 @@ import cv
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+from time import time
+import sys
 
 class wireless_camera:
     
     def __init__(self):
         #IMPORTANT : Change self.CAMERA_IP to your camera IP
-        self.CAMERA_IP = "http://128.59.19.226:1024/img/video.mjpeg"   #"http://192.168.1.2/img/video.mjpeg"
+        self.CAMERA_IP = "http://128.59.19.52:1024/img/video.mjpeg"   #"http://192.168.1.2/img/video.mjpeg"
         self.image_pub = rospy.Publisher("wireless_camera/image",Image)
         self.bridge = CvBridge()
                
@@ -63,11 +65,30 @@ class wireless_camera:
         #Publish image message using OpenCV
         self.image_pub.publish(image_message)
     
-
+#@param argv[1]: fps to show frame per second
 if __name__ == '__main__':
+    show_fps=False
+    if len(sys.argv) >=2 and sys.argv[1] == "fps":
+        show_fps = True
+        
     rospy.loginfo("Start to publish image from a wireless camera")
     wc = wireless_camera()
     rospy.init_node('wireless_camera', anonymous=True)
-    while not rospy.is_shutdown():
+    
+    #See if frame rate is shown
+    if show_fps:
+        frame=0
+        start = time()
+        
+    #Run publishing image till this package is shot down.    
+    while not rospy.is_shutdown(): 
         wc.open_file()
         wc.publish_image()
+        #show frame rates
+        if show_fps:
+            frame=frame+1
+            end = time() 
+            if (end-start) >= 1.0:
+                print frame/(end-start)
+                frame=0
+                start=time()
